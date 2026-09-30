@@ -589,6 +589,7 @@ function writeLocalState(){if(!student)return; state.meta=state.meta||{};state.m
 function initBackend(){
   const url=String(CONFIG.appsScriptUrl||'').trim();
   if(!url || url.includes('PASTE_APPS_SCRIPT')){backend.lastError='config.js에 Apps Script /exec 주소를 입력하세요.';setSave('error','서버 주소 미설정');return}
+  setSave('pending','서버 깨우는 중');
   jsonpCall('ping',{}).then(()=>{
     backend.ready=true;backend.lastError='';setSave('saved',student?'서버 연결':'연결 준비');
     if(student&&token)syncNow();
@@ -605,7 +606,7 @@ function jsonpCall(api,params={}){
   return new Promise((resolve,reject)=>{
     const callback='__rcJsonp'+Date.now()+(++backend.seq),script=document.createElement('script');
     const cleanup=()=>{delete window[callback];script.remove();clearTimeout(timer)};
-    const timer=setTimeout(()=>{cleanup();reject(new Error('Apps Script 응답이 없습니다. 배포 권한과 /exec 주소를 확인하세요.'))},20000);
+    const timer=setTimeout(()=>{cleanup();reject(new Error('Apps Script 응답이 60초 동안 없습니다. 배포 권한과 /exec 주소를 확인하세요.'))},60000);
     window[callback]=result=>{cleanup();result&&result.ok?resolve(result.value):reject(new Error(result?.error||'서버 처리 중 오류가 발생했습니다.'))};
     const q=new URLSearchParams({api,callback,...Object.fromEntries(Object.entries(params).map(([k,v])=>[k,String(v)]))});
     script.onerror=()=>{cleanup();reject(new Error('Apps Script 요청을 불러오지 못했습니다.'))};
